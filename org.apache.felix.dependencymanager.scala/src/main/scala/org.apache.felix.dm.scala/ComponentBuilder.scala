@@ -1,7 +1,7 @@
 package org.apache.felix.dm.scala
 
 import org.apache.felix.dm.Component
-import java.util.Dictionary
+import java.util.{Dictionary,Hashtable}
 
 trait ComponentBuilder
 {
@@ -11,8 +11,8 @@ trait ComponentBuilder
 
   def properties(props :(Any,Any)*) :ComponentBuilder
 
-  def provides[S](s :Class[S]*) :ComponentBuilder
-  def provides[S](props :Map[_,_], s :Class[S]*) :ComponentBuilder
+  //def provides(s :Class[_]*) :ComponentBuilder
+  def provides(props :Map[_,_], s :Class[_]*) :ComponentBuilder
 
   def init(f :() => Unit) :ComponentBuilder
   def start(f :() => Unit) :ComponentBuilder
@@ -26,6 +26,7 @@ object ComponentBuilder
 {
   type Factory[T] = () => T
   type LifeCycle = () => Unit
+  type Service[T] = (Class[T],Map[_,_])
 
   def apply() :ComponentBuilder = ComponentBuilderImpl()
 
@@ -33,6 +34,7 @@ object ComponentBuilder
     impl :Option[Any] = None,
     implClass :Option[Class[_]] = None,
     factory :Option[Factory[_]] = None,
+    provides :List[Service[_]] = Nil,
     properties :Option[Dictionary[_,_]] = None,
     init :Option[LifeCycle] = None,
     start :Option[LifeCycle] = None,
@@ -46,10 +48,15 @@ object ComponentBuilder
     def impl[C](c :Class[C]) :ComponentBuilder = copy(implClass = Some(c))
     def factory[I](f :() => I) :ComponentBuilder = copy(factory = Some(f))
 
-    def properties(props :(Any,Any)*) :ComponentBuilder = copy(properties = ???)
+    def properties(props :(Any,Any)*) :ComponentBuilder = {
+      val dic = new Hashtable[Any,Any]() //OSGi internally requires a Dictionary :/
+      props.foreach { case(k,v) => dic.put(k,v) }
+      copy(properties = Some(dic))
+    }
 
-    def provides[S](s :Class[S]*) :ComponentBuilder = ???
-    def provides[S](props :Map[_,_], s :Class[S]*) :ComponentBuilder = ???
+    //def provides(s :Class[_]*) :ComponentBuilder = provides(Map(), s)
+    def provides(props :Map[_,_], s :Class[_]*) :ComponentBuilder = 
+      copy(provides = provides ++ (s.toList.map((_,props))))
 
     def init(f :() => Unit) :ComponentBuilder = copy(init = Some(f))
     def start(f :() => Unit) :ComponentBuilder = copy(init = Some(f))
