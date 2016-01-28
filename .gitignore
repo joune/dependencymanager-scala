@@ -2,6 +2,8 @@
 .gradle/
 build/
 gradle.properties
+*/bin
+*/generated
 
 # Vim
 *.swp
