@@ -1,0 +1,30 @@
+/*
+ * Master Gradle build script
+ *
+ * Depends on bndWorkspace and bndURI properties set by settings.gradle.
+ */
+
+/* Add bnd as a script dependency */
+buildscript {
+  dependencies {
+    classpath files(bndURI)
+  }
+}
+
+/* Configure the subprojects */
+subprojects {
+  apply plugin: 'scala'
+
+  repositories {
+    mavenCentral()
+  }
+
+  dependencies {
+    compile 'org.scala-lang:scala-library:2.11.6'
+  }
+
+  def bndProject = bndWorkspace.getProject(name)
+  if (bndProject != null) {
+    plugins.apply 'biz.aQute.bnd'
+  }
+}

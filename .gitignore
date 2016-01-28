@@ -1,0 +1,10 @@
+# Gradle
+.gradle/
+build/
+gradle.properties
+
+# Vim
+*.swp
+.*.swo
+
+cnf
