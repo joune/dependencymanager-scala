@@ -20,5 +20,5 @@ trait DependencyActivatorBase extends BundleActivator
   def destroy():Unit
 
   def component(configure :ComponentBuilder => ComponentBuilder) = 
-    dm.add(configure(ComponentBuilder()).build)
+    dm.add(ComponentBuilder.build(dm, configure(ComponentBuilder())))
 }
