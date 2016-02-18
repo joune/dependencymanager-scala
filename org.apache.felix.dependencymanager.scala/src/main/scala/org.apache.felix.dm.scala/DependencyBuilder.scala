@@ -11,6 +11,9 @@ trait DependencyBuilder[S,C]
   def andFilter(fs:(String,String)*):DependencyBuilder[S,C]
 
   def added(cb:(C,S) => Unit):DependencyBuilder[S,C]
+  def changed(cb:(C,S) => Unit):DependencyBuilder[S,C]
+  def removed(cb:(C,S) => Unit):DependencyBuilder[S,C]
+  def swapped(cb:(C,S) => Unit):DependencyBuilder[S,C]
 }
 
 object DependencyBuilder
@@ -55,5 +58,8 @@ object DependencyBuilder
     private def concat(fs:List[(String,String)]) = fs.map { case (k,v) => s"($k=$v)" }.mkString
 
     def added(cb:(C,S) => Unit):DependencyBuilder[S,C] = copy(o_added = Some(cb))
+    def changed(cb:(C,S) => Unit):DependencyBuilder[S,C] = copy(o_changed = Some(cb))
+    def removed(cb:(C,S) => Unit):DependencyBuilder[S,C] = copy(o_removed = Some(cb))
+    def swapped(cb:(C,S) => Unit):DependencyBuilder[S,C] = copy(o_swapped = Some(cb))
   }
 }
