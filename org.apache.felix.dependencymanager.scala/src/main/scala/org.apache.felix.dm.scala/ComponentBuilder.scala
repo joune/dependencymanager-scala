@@ -4,79 +4,78 @@ import org.apache.felix.dm.Component
 import org.apache.felix.dm.DependencyManager
 import java.util.{Dictionary,Hashtable}
 
-trait ComponentBuilder
+trait ComponentBuilder[T]
 {
-  def impl[I](i :I) :ComponentBuilder
-  def impl[C](c :Class[C]) :ComponentBuilder
-  def factory[I](f :() => I) :ComponentBuilder
+  def provides[S](s :Class[S], props :(String,Any)*) :ComponentBuilder[T]
 
-  def properties(props :(Any,Any)*) :ComponentBuilder
+  def init(f :T => Unit) :ComponentBuilder[T]
+  def start(f :T => Unit) :ComponentBuilder[T]
+  def stop(f :T => Unit) :ComponentBuilder[T]
+  def destroy(f :T => Unit) :ComponentBuilder[T]
 
-  def provides(s :Class[_]*) :ComponentBuilder
-  def provides(props :Map[_,_], s :Class[_]*) :ComponentBuilder
-
-  def init(f :() => Unit) :ComponentBuilder
-  def start(f :() => Unit) :ComponentBuilder
-  def stop(f :() => Unit) :ComponentBuilder
-  def destroy(f :() => Unit) :ComponentBuilder
+  def requires[D](d :Class[D])(configure :DependencyBuilder[D] => DependencyBuilder[D]) :ComponentBuilder[T]
+  def optionally[D](d :Class[D])(configure :DependencyBuilder[D] => DependencyBuilder[D]) :ComponentBuilder[T]
 }
 
 object ComponentBuilder
 {
   type Factory[T] = () => T
-  type LifeCycle = () => Unit
-  type Service[T] = (Class[T],Map[_,_])
+  type LifeCycle[T] = T => Unit
+  type CompConfig[T] = ComponentBuilder[T] => ComponentBuilder[T]
+  type DepsConfig[T] = DependencyBuilder[T] => DependencyBuilder[T]
 
-  def apply() :ComponentBuilder = ComponentBuilderImpl()
+  def apply[T](dm :DependencyManager, c: T, configure :CompConfig[T]) =
+    build(dm, ComponentBuilderImpl(impl = Some(c)), configure)
 
-  def build(dm :DependencyManager, builder:ComponentBuilder) :Component = {
-    val b = builder.asInstanceOf[ComponentBuilderImpl]
+  def apply[T](dm :DependencyManager, c: Class[T], configure :CompConfig[T]) =
+    build(dm, ComponentBuilderImpl(implClass = Some(c)), configure)
+
+  def apply[T](dm :DependencyManager, f: () => T, configure :CompConfig[T]) =
+    build(dm, ComponentBuilderImpl(factory = Some(f)), configure)
+
+  private def build[T](dm:DependencyManager, builder:ComponentBuilderImpl[T], configure:CompConfig[T]) :Component = {
+    val b = configure(builder).asInstanceOf[ComponentBuilderImpl[T]]
     val comp = dm.createComponent
     b.impl foreach ( comp.setImplementation(_) )
     b.implClass foreach ( comp.setImplementation(_) )
     //b.factory...
     b.properties foreach ( comp.setServiceProperties(_) )
-    comp.setCallbacks(new Object {
-      def _init():Unit = b.init foreach (_())
-      def _start():Unit = b.start foreach (_())
-      def _stop():Unit = b.stop foreach (_())
-      def _destroy():Unit = b.destroy foreach (_())
-    }, "_init", "_start", "_stop", "_destroy")
+    //comp.setCallbacks...
     //b.dependencies...
     comp
   }
 
-  private case class ComponentBuilderImpl(
-    impl :Option[Any] = None,
-    implClass :Option[Class[_]] = None, //? use Either[Class,Any] ?  or Option[Either] ?!..
-    factory :Option[Factory[_]] = None,
-    provides :List[Service[_]] = Nil,
-    properties :Option[Dictionary[_,_]] = None,
-    init :Option[LifeCycle] = None,
-    start :Option[LifeCycle] = None,
-    stop :Option[LifeCycle] = None,
-    destroy :Option[LifeCycle] = None,
-    dependencies :List[DependencyBuilder] = Nil
+  private case class ComponentBuilderImpl[T](
+    impl :Option[T] = None,
+    implClass :Option[Class[T]] = None,
+    factory :Option[Factory[T]] = None,
+    provides :Option[Class[_]] = None,
+    properties :Option[Dictionary[String,_]] = None,
+    init :Option[LifeCycle[T]] = None,
+    start :Option[LifeCycle[T]] = None,
+    stop :Option[LifeCycle[T]] = None,
+    destroy :Option[LifeCycle[T]] = None,
+    dependencies :List[DependencyBuilder[_]] = Nil
   ) 
-  extends ComponentBuilder 
+  extends ComponentBuilder[T]
   {
-    def impl[I](i :I) :ComponentBuilder = copy(impl = Some(i))
-    def impl[C](c :Class[C]) :ComponentBuilder = copy(implClass = Some(c))
-    def factory[I](f :() => I) :ComponentBuilder = copy(factory = Some(f))
-
-    def properties(props :(Any,Any)*) :ComponentBuilder = {
-      val dic = new Hashtable[Any,Any]() //OSGi internally requires a Dictionary :/
+    def provides[S](s: Class[S], props :(String,Any)*) :ComponentBuilder[T] = {
+      val dic = new Hashtable[String,Any]() //OSGi internally requires a Dictionary :/
       props.foreach { case(k,v) => dic.put(k,v) }
-      copy(properties = Some(dic))
+      copy(provides = Some(s), properties = Some(dic))
     }
 
-    def provides(s :Class[_]*) :ComponentBuilder = provides(Map(), s:_*)
-    def provides(props :Map[_,_], s :Class[_]*) :ComponentBuilder = 
-      copy(provides = provides ++ (s.toList.map((_,props))))
+    def init(f :T => Unit) :ComponentBuilder[T] = copy(init = Some(f))
+    def start(f :T => Unit) :ComponentBuilder[T] = copy(init = Some(f))
+    def stop(f :T => Unit) :ComponentBuilder[T] = copy(init = Some(f))
+    def destroy(f :T => Unit) :ComponentBuilder[T] = copy(init = Some(f))
 
-    def init(f :() => Unit) :ComponentBuilder = copy(init = Some(f))
-    def start(f :() => Unit) :ComponentBuilder = copy(init = Some(f))
-    def stop(f :() => Unit) :ComponentBuilder = copy(init = Some(f))
-    def destroy(f :() => Unit) :ComponentBuilder = copy(init = Some(f))
+    def requires[D](d :Class[D])(configure :DepsConfig[D]) :ComponentBuilder[T] = 
+      addDependency(true, d, configure)
+    def optionally[D](d :Class[D])(configure :DepsConfig[D]) :ComponentBuilder[T] = 
+      addDependency(false, d, configure)
+
+    def addDependency[D](required:Boolean, d: Class[D], configure :DepsConfig[D]) :ComponentBuilder[T] =
+      copy(dependencies = configure(DependencyBuilder(required, d))::dependencies)
   }
 }

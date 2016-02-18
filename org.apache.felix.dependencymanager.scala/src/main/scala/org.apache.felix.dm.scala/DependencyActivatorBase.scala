@@ -7,7 +7,7 @@ import org.osgi.framework.BundleContext
 
 trait DependencyActivatorBase extends BundleActivator
 {
-  var dm:DependencyManager = _
+  private var dm:DependencyManager = _
 
   def start(bc :BundleContext) :Unit = {
     dm = new DependencyManager(bc)
@@ -17,8 +17,14 @@ trait DependencyActivatorBase extends BundleActivator
   def stop(bc :BundleContext) :Unit = destroy()
 
   def init():Unit
-  def destroy():Unit
+  def destroy() = Unit
 
-  def component(configure :ComponentBuilder => ComponentBuilder) = 
-    dm.add(ComponentBuilder.build(dm, configure(ComponentBuilder())))
+  def component[T](c: T)(configure :ComponentBuilder[T] => ComponentBuilder[T]) =
+    dm.add(ComponentBuilder(dm, c, configure))
+
+  def component[T](c: Class[T])(configure :ComponentBuilder[T] => ComponentBuilder[T]) =
+    dm.add(ComponentBuilder(dm, c, configure))
+
+  def component[T](f: () => T)(configure :ComponentBuilder[T] => ComponentBuilder[T]) =
+    dm.add(ComponentBuilder(dm, f, configure))
 }
