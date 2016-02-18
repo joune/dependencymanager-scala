@@ -11,8 +11,11 @@ class Activator extends DependencyActivatorBase
     }
     component(classOf[Comp2]) {
       _.provides(classOf[S2])
-       .requires(classOf[S1])(_.filter("name", "comp1"))
-       //.optionally(classOf[S1])(_.filter("name", "whatever"))
+       .requires(classOf[S1]) {
+         _.filter("name", "comp1")
+          .added((inst,s) => inst.bind(s))
+       }
+       .optionally(classOf[S1])(_.filter("name", "whatever"))
        .start(_.start)
     }
   }

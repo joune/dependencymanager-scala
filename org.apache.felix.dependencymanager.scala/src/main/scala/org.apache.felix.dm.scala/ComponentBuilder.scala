@@ -13,8 +13,8 @@ trait ComponentBuilder[T]
   def stop(f :T => Unit) :ComponentBuilder[T]
   def destroy(f :T => Unit) :ComponentBuilder[T]
 
-  def requires[D](d :Class[D])(configure :DependencyBuilder[D] => DependencyBuilder[D]) :ComponentBuilder[T]
-  def optionally[D](d :Class[D])(configure :DependencyBuilder[D] => DependencyBuilder[D]) :ComponentBuilder[T]
+  def requires[D](d :Class[D])(configure :DependencyBuilder[D,T] => DependencyBuilder[D,T]) :ComponentBuilder[T]
+  def optionally[D](d :Class[D])(configure :DependencyBuilder[D,T] => DependencyBuilder[D,T]) :ComponentBuilder[T]
 }
 
 object ComponentBuilder
@@ -22,7 +22,7 @@ object ComponentBuilder
   type Factory[T] = () => T
   type LifeCycle[T] = T => Unit
   type CompConfig[T] = ComponentBuilder[T] => ComponentBuilder[T]
-  type DepsConfig[T] = DependencyBuilder[T] => DependencyBuilder[T]
+  type DepsConfig[D,T] = DependencyBuilder[D,T] => DependencyBuilder[D,T]
 
   def apply[T](dm :DependencyManager, c: T, configure :CompConfig[T]) =
     build(dm, ComponentBuilderImpl(impl = Some(c)), configure)
@@ -47,7 +47,7 @@ object ComponentBuilder
       def _stop():Unit = b.stop foreach (_(inst))
       def _destroy():Unit = b.destroy foreach (_(inst))
     }, "_init", "_start", "_stop", "_destroy")
-    b.dependencies foreach { d => comp.add(DependencyBuilder.build(dm, d)) }
+    b.dependencies foreach { d => comp.add(DependencyBuilder.build(dm, d, () => comp.getInstance.asInstanceOf[T])) }
     comp
   }
 
@@ -61,7 +61,7 @@ object ComponentBuilder
     start :Option[LifeCycle[T]] = None,
     stop :Option[LifeCycle[T]] = None,
     destroy :Option[LifeCycle[T]] = None,
-    dependencies :List[DependencyBuilder[_]] = Nil
+    dependencies :List[DependencyBuilder[_,T]] = Nil
   ) 
   extends ComponentBuilder[T]
   {
@@ -76,12 +76,12 @@ object ComponentBuilder
     def stop(f :T => Unit) :ComponentBuilder[T] = copy(init = Some(f))
     def destroy(f :T => Unit) :ComponentBuilder[T] = copy(init = Some(f))
 
-    def requires[D](d :Class[D])(configure :DepsConfig[D]) :ComponentBuilder[T] = 
+    def requires[D](d :Class[D])(configure :DepsConfig[D,T]) :ComponentBuilder[T] = 
       addDependency(true, d, configure)
-    def optionally[D](d :Class[D])(configure :DepsConfig[D]) :ComponentBuilder[T] = 
+    def optionally[D](d :Class[D])(configure :DepsConfig[D,T]) :ComponentBuilder[T] = 
       addDependency(false, d, configure)
 
-    def addDependency[D](required:Boolean, d: Class[D], configure :DepsConfig[D]) :ComponentBuilder[T] =
+    def addDependency[D](required:Boolean, d: Class[D], configure :DepsConfig[D,T]) :ComponentBuilder[T] =
       copy(dependencies = configure(DependencyBuilder(required, d))::dependencies)
   }
 }
