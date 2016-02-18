@@ -6,7 +6,7 @@ import java.util.{Dictionary,Hashtable}
 
 trait ComponentBuilder[T]
 {
-  def provides[S](s :Class[S], props :(String,Any)*) :ComponentBuilder[T]
+  def provides[S >: T](s :Class[S], props :(String,Any)*) :ComponentBuilder[T]
 
   def init(f :T => Unit) :ComponentBuilder[T]
   def start(f :T => Unit) :ComponentBuilder[T]
@@ -65,7 +65,7 @@ object ComponentBuilder
   ) 
   extends ComponentBuilder[T]
   {
-    def provides[S](s: Class[S], props :(String,Any)*) :ComponentBuilder[T] = {
+    def provides[S >: T](s: Class[S], props :(String,Any)*) :ComponentBuilder[T] = {
       val dic = new Hashtable[String,Any]() //OSGi internally requires a Dictionary :/
       props.foreach { case(k,v) => dic.put(k,v) }
       copy(provides = Some(s), properties = Some(dic))
