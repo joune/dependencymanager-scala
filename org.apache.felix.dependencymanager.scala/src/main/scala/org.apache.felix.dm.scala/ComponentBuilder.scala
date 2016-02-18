@@ -40,8 +40,14 @@ object ComponentBuilder
     b.implClass foreach ( comp.setImplementation(_) )
     //b.factory...
     b.properties foreach ( comp.setServiceProperties(_) )
-    //comp.setCallbacks...
-    //b.dependencies...
+    comp.setCallbacks(new Object {
+      lazy val inst = comp.getInstance.asInstanceOf[T]
+      def _init():Unit = b.init foreach (_(inst))
+      def _start():Unit = b.start foreach (_(inst))
+      def _stop():Unit = b.stop foreach (_(inst))
+      def _destroy():Unit = b.destroy foreach (_(inst))
+    }, "_init", "_start", "_stop", "_destroy")
+    b.dependencies foreach { d => comp.add(DependencyBuilder.build(dm, d)) }
     comp
   }
 
