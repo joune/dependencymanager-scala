@@ -1,0 +1,5 @@
+#
+# Plugin git setup
+#
+-plugin.git = aQute.bnd.plugin.git.GitPlugin
+
