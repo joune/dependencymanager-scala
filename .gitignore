@@ -10,4 +10,4 @@ gradle.properties
 *.swp
 .*.swo
 
-cnf
+cnf/cache
