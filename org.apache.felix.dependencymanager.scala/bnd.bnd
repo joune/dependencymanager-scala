@@ -1,3 +1,2 @@
 Bundle-Version: 1.0.0
-Export-Package: org.apache.felix.dm.scala
-Test-Cases : ${classes;extending;junit.framework.TestCase;concrete}
+-sub: *.bnd

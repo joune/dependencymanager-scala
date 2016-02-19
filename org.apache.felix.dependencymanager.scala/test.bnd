@@ -1,0 +1,6 @@
+Bundle-SymbolicName: org.apache.felix.dm.scala.test
+Export-Package: org.apache.felix.dm.scala.test
+//Bundle-Activator: org.apache.felix.dm.scala.test.Activator
+-classpath: bin_test
+-runpath: org.apache.felix.main, scala-library
+Test-Cases : ${classes;extending;junit.framework.TestCase;concrete}
