@@ -2,3 +2,15 @@ dependencies {
   compile project(path: ':org.apache.felix.dependencymanager.scala'),
           'org.scalatest:scalatest_2.11:2.2.6'
 }
+
+task testrun(type: JavaExec) {
+  inputs.dir sourceSets.test.output
+  inputs.dir sourceSets.main.output
+  outputs.dir "$buildDir/test-results"
+  classpath configurations.compile
+  main 'org.apache.felix.dm.scala.test.launcher.Launcher'
+  args configurations.compile
+  systemProperty 'felix.cache.rootdir', "$buildDir"
+  systemProperty 'test.out', "$buildDir/test-results"
+}
+//test.dependsOn(testrun)
