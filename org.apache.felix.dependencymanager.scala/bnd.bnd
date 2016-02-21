@@ -1,2 +1,2 @@
-Bundle-Version: 1.0.0
--sub: *.bnd
+Bundle-SymbolicName: org.apache.felix.dm.scala
+Export-Package: org.apache.felix.dm.scala

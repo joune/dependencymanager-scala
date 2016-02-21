@@ -39,12 +39,3 @@ class Comp2 extends S2
   def start = println("Comp2 started")
 
 }
-
-import junit.framework.TestCase
-import org.osgi.framework.FrameworkUtil
-class MyTest extends TestCase
-{
-  def testOne() = {
-    //NPE! new Activator().start(FrameworkUtil.getBundle(this.getClass).getBundleContext)
-  }
-}

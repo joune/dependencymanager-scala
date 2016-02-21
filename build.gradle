@@ -1,9 +1,3 @@
-/*
- * Master Gradle build script
- *
- * Depends on bndWorkspace set by settings.gradle.
- */
-
 /* Add bnd as a script dependency */
 buildscript {
   repositories {
@@ -16,8 +10,10 @@ buildscript {
 
 /* Configure the subprojects */
 subprojects {
+  version = '1.0.0'
+
   apply plugin: 'scala'
-  apply plugin: 'biz.aQute.bnd'
+  apply plugin: 'biz.aQute.bnd.builder'
 
   repositories {
     mavenCentral()
@@ -28,7 +24,5 @@ subprojects {
             'org.apache.felix:org.apache.felix.main:5.4.0',
             'org.osgi:org.osgi.compendium:5.0.0',
             'org.apache.felix:org.apache.felix.dependencymanager:4.2.0'
-
-    testCompile 'junit:junit:4.12'
   }
 }

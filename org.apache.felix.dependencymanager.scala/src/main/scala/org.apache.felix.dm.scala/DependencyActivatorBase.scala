@@ -5,7 +5,9 @@ import org.apache.felix.dm.DependencyManager
 import org.osgi.framework.BundleActivator
 import org.osgi.framework.BundleContext
 
-trait DependencyActivatorBase extends BundleActivator
+// if we use a trait instead of an abstract class here, bnd complains 
+// that the implementing "Activator does not implement BundleActivator"
+abstract class DependencyActivatorBase extends BundleActivator
 {
   private var dm:DependencyManager = _
 

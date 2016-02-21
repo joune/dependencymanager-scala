@@ -1,13 +1,8 @@
 # Gradle
 .gradle/
 build/
-gradle.properties
-*/bin
-*/bin_test
-*/generated
 
 # Vim
 *.swp
 .*.swo
 
-cnf/cache
