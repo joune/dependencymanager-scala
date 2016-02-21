@@ -1,16 +1,28 @@
+configurations {
+  felix
+  testrun
+}
+
 dependencies {
-  compile project(path: ':org.apache.felix.dependencymanager.scala'),
+  bundles project(path: ':org.apache.felix.dependencymanager.scala')
+
+  compile configurations.bundles,
+          configurations.felix,
           'org.scalatest:scalatest_2.11:2.2.6'
+
+  felix 'org.apache.felix:org.apache.felix.main:5.4.0'
+
+  testrun configurations.bundles, jar.outputs.files
 }
 
 task testrun(type: JavaExec) {
   inputs.dir sourceSets.test.output
   inputs.dir sourceSets.main.output
   outputs.dir "$buildDir/test-results"
-  classpath configurations.compile
+  classpath configurations.scala, configurations.felix, jar.archivePath
   main 'org.apache.felix.dm.scala.test.launcher.Launcher'
-  args configurations.compile
+  args configurations.testrun
   systemProperty 'felix.cache.rootdir', "$buildDir"
   systemProperty 'test.out', "$buildDir/test-results"
 }
-//test.dependsOn(testrun)
+test.dependsOn(testrun)

@@ -19,10 +19,18 @@ subprojects {
     mavenCentral()
   }
 
+  configurations {
+    scala
+    bundles
+  }
+
   dependencies {
-    compile 'org.scala-lang:scala-library:2.11.6',
-            'org.apache.felix:org.apache.felix.main:5.4.0',
-            'org.osgi:org.osgi.compendium:5.0.0',
+    scala   'org.scala-lang:scala-library:2.11.6'
+
+    bundles configurations.scala,
+            'org.osgi:org.osgi.core:5.0.0',
             'org.apache.felix:org.apache.felix.dependencymanager:4.2.0'
+
+    compile configurations.bundles
   }
 }

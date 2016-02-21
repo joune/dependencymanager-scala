@@ -2,3 +2,7 @@ Bundle-SymbolicName: org.apache.felix.dm.scala.test
 Export-Package: org.apache.felix.dm.scala.test
 Private-Package: org.apache.felix.dm.scala.test.launcher
 Bundle-Activator: org.apache.felix.dm.scala.test.Activator
+Include-Resource: @scalatest_2.11-2.2.6.jar
+-exportcontents: *
+Import-Package: *;resolution:=optional
+DynamicImport-Package: *
