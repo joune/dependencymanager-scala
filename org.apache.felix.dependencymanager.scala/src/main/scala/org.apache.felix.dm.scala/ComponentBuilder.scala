@@ -72,9 +72,9 @@ object ComponentBuilder
     }
 
     def init(f :T => Unit) :ComponentBuilder[T] = copy(init = Some(f))
-    def start(f :T => Unit) :ComponentBuilder[T] = copy(init = Some(f))
-    def stop(f :T => Unit) :ComponentBuilder[T] = copy(init = Some(f))
-    def destroy(f :T => Unit) :ComponentBuilder[T] = copy(init = Some(f))
+    def start(f :T => Unit) :ComponentBuilder[T] = copy(start = Some(f))
+    def stop(f :T => Unit) :ComponentBuilder[T] = copy(stop = Some(f))
+    def destroy(f :T => Unit) :ComponentBuilder[T] = copy(destroy = Some(f))
 
     def requires[D](d :Class[D])(configure :DepsConfig[D,T]) :ComponentBuilder[T] = 
       addDependency(true, d, configure)

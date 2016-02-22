@@ -9,7 +9,7 @@ import org.osgi.framework.BundleContext
 // that the implementing "Activator does not implement BundleActivator"
 abstract class DependencyActivatorBase extends BundleActivator
 {
-  private var dm:DependencyManager = _
+  protected var dm:DependencyManager = _
 
   def start(bc :BundleContext) :Unit = {
     dm = new DependencyManager(bc)
