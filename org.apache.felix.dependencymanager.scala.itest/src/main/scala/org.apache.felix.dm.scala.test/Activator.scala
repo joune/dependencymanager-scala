@@ -14,6 +14,7 @@ class Activator extends DependencyActivatorBase
     // initialize some random components
     component(new Comp1()) {
       _.provides(classOf[S1], "name" -> "comp1")
+       .start(_.run)
     }
 
     component(classOf[Comp2]) {
@@ -23,7 +24,7 @@ class Activator extends DependencyActivatorBase
           .added((inst,s) => inst.bind(s))
        }
        .optionally(classOf[S1])(_.filter("name", "whatever"))
-       .start(_.start)
+       .start(_.go)
     }
 
     // inject services to ourself so we can start the actual test
@@ -34,14 +35,19 @@ class Activator extends DependencyActivatorBase
        .requires(classOf[S2]) {
          _.added((inst,s) => inst.bind(s))
        }
+       .init(_.test_init)
        .start(_.start)
     }
   }
 
-  def bind(s:S1) = TestDependencies.s1 = Some(s)
-  def bind(s:S2) = TestDependencies.s2 = Some(s)
+  def bind(s:S1) = TestDependencies.s1 = true
+  def bind(s:S2) = TestDependencies.s2 = true
+  def test_init = TestDependencies.init = true
+  def test_stop = TestDependencies.stop = true
+  def test_destroy = TestDependencies.destroy = true
 
   def start:Unit = Future {
+    TestDependencies.start = true //obviously :/
     assert( Runner.run(Array("-o",
       "-u", System.getProperty("test.out"),
       "-s", classOf[DMSpec].getName)) )
@@ -53,6 +59,9 @@ class Activator extends DependencyActivatorBase
 
 trait S1
 class Comp1 extends S1
+{
+  def run = println("Comp1 started")
+}
 
 trait S2
 class Comp2 extends S2
@@ -63,14 +72,18 @@ class Comp2 extends S2
   def bind(s:S1) = s1 = s
   def unbind(s:S1) = println("s1 is gone!")
 
-  def start = println("Comp2 started")
+  def go = println("Comp2 started")
 
 }
 
 object TestDependencies
 {
-  var s1:Option[S1] = None //injected by Activator
-  var s2:Option[S2] = None //injected by Activator
+  var s1:Boolean = false
+  var s2:Boolean = false
+  var init:Boolean = false
+  var start:Boolean = false
+  var stop:Boolean = false
+  var destroy:Boolean = false
 }
 
 
@@ -81,7 +94,17 @@ class DMSpec extends FlatSpec with Matchers
   import TestDependencies._
 
   "DM" should "bind all dependencies" in {
-    s1.get
-    s2.get
+    assert(s1, "S1 not bound")
+    assert(s2, "S2 not bound")
+  }
+  
+  it should "call the init and start lifecycle callback methods" in {
+    assert(init, "init not called")
+    assert(start, "start not called")
+  }
+
+  ignore should "call the stop and destroy lifecycle callback methods" in {
+    assert(stop, "start not called")
+    assert(destroy, "start not called")
   }
 }
