@@ -39,6 +39,9 @@ object ComponentBuilder
     b.impl foreach ( comp.setImplementation(_) )
     b.implClass foreach ( comp.setImplementation(_) )
     //b.factory...
+    b.provides foreach { (clazz:Class[_]) => 
+      comp.setInterface(clazz.getName, null)
+    }
     b.properties foreach ( comp.setServiceProperties(_) )
     comp.setCallbacks(new Object {
       lazy val inst = comp.getInstance.asInstanceOf[T]
@@ -47,7 +50,9 @@ object ComponentBuilder
       def _stop():Unit = b.stop foreach (_(inst))
       def _destroy():Unit = b.destroy foreach (_(inst))
     }, "_init", "_start", "_stop", "_destroy")
-    b.dependencies foreach { d => comp.add(DependencyBuilder.build(dm, d, () => comp.getInstance.asInstanceOf[T])) }
+    b.dependencies foreach { d => 
+      comp.add(DependencyBuilder.build(dm, d, () => comp.getInstance.asInstanceOf[T]))
+    }
     comp
   }
 
