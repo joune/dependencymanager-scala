@@ -18,11 +18,12 @@ object Launcher
     felixProps.put("gosh.args", "-s") //prevent gogo shell from stopping the framework!
     System.getProperties foreach { case (k,v) => felixProps.put(k, v) }
 
+    val bundleSet = bundles.toSet // filter duplicates
     println("Starting Felix with ")
-    bundles.foreach(b => println("\t"+new java.io.File(b).getName))
+    bundleSet.foreach(b => println("\t"+new java.io.File(b).getName))
     
     List("install", "start").foreach { a =>
-      felixProps.put(s"felix.auto.$a", bundles.map("file:"+_).mkString(" "))
+      felixProps.put(s"felix.auto.$a", bundleSet.map("file:"+_).mkString(" "))
     }
     val felix = factory.newFramework(felixProps)
     felix.init
