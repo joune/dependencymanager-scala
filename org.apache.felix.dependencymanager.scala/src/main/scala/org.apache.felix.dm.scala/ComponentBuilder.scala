@@ -13,8 +13,8 @@ trait ComponentBuilder[T]
   def stop(f :T => Unit) :ComponentBuilder[T]
   def destroy(f :T => Unit) :ComponentBuilder[T]
 
-  def requires[D](d :Class[D])(configure :DependencyBuilder[D,T] => DependencyBuilder[D,T]) :ComponentBuilder[T]
-  def optionally[D](d :Class[D])(configure :DependencyBuilder[D,T] => DependencyBuilder[D,T]) :ComponentBuilder[T]
+  def requires[D](d :Class[D])(configure :ServiceDependencyBuilder[D,T] => ServiceDependencyBuilder[D,T]) :ComponentBuilder[T]
+  def optionally[D](d :Class[D])(configure :ServiceDependencyBuilder[D,T] => ServiceDependencyBuilder[D,T]) :ComponentBuilder[T]
 }
 
 object ComponentBuilder
@@ -22,7 +22,7 @@ object ComponentBuilder
   type Factory[T] = () => T
   type LifeCycle[T] = T => Unit
   type CompConfig[T] = ComponentBuilder[T] => ComponentBuilder[T]
-  type DepsConfig[D,T] = DependencyBuilder[D,T] => DependencyBuilder[D,T]
+  type DepsConfig[D,T] = ServiceDependencyBuilder[D,T] => ServiceDependencyBuilder[D,T]
 
   def apply[T](dm :DependencyManager, c: T, configure :CompConfig[T]) =
     build(dm, ComponentBuilderImpl(impl = Some(c)), configure)
@@ -51,7 +51,7 @@ object ComponentBuilder
       def _destroy():Unit = b.destroy foreach (_(inst))
     }, "_init", "_start", "_stop", "_destroy")
     b.dependencies foreach { d => 
-      comp.add(DependencyBuilder.build(dm, d, () => comp.getInstance.asInstanceOf[T]))
+      comp.add(ServiceDependencyBuilder.build(dm, d, () => comp.getInstance.asInstanceOf[T]))
     }
     comp
   }
@@ -66,7 +66,7 @@ object ComponentBuilder
     start :Option[LifeCycle[T]] = None,
     stop :Option[LifeCycle[T]] = None,
     destroy :Option[LifeCycle[T]] = None,
-    dependencies :List[DependencyBuilder[_,T]] = Nil
+    dependencies :List[ServiceDependencyBuilder[_,T]] = Nil
   ) 
   extends ComponentBuilder[T]
   {
@@ -87,6 +87,6 @@ object ComponentBuilder
       addDependency(false, d, configure)
 
     def addDependency[D](required:Boolean, d: Class[D], configure :DepsConfig[D,T]) :ComponentBuilder[T] =
-      copy(dependencies = configure(DependencyBuilder(required, d))::dependencies)
+      copy(dependencies = configure(ServiceDependencyBuilder(required, d))::dependencies)
   }
 }
