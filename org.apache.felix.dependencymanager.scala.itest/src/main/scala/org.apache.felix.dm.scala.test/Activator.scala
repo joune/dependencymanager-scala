@@ -17,7 +17,7 @@ class Activator extends DependencyActivatorBase
        .start(_.run)
     }
 
-    component(classOf[Comp2]) {
+    component[Comp2] {
       _.provides(classOf[S2])
        .requires(classOf[S1]) {
          _.filter("name", "comp1")
