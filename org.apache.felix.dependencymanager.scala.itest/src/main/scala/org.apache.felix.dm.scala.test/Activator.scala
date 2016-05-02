@@ -21,7 +21,7 @@ class Activator extends DependencyActivatorBase
       _.provides(classOf[S2])
        .requires(classOf[S1]) {
          _.filter("name", "comp1")
-          .added((inst,s) => inst.bind(s))
+          .added((inst,s,p) => inst.bind(s,p))
        }
        .optionally(classOf[S1])(_.filter("name", "whatever"))
        .start(_.go)
@@ -30,10 +30,10 @@ class Activator extends DependencyActivatorBase
     // inject services to ourself so we can start the actual test
     component(this) {
       _.requires(classOf[S1]) {
-         _.added((inst,s) => inst.bind(s))
+         _.added((inst,s,p) => inst.bind(s))
        }
        .requires(classOf[S2]) {
-         _.added((inst,s) => inst.bind(s))
+         _.added((inst,s,p) => inst.bind(s))
        }
        .init(_.test_init)
        .start(_.start)
@@ -69,7 +69,7 @@ class Comp2 extends S2
   private var s1:S1 = _ // injected by callback
   //private var o1:Option[S1] = None // injected by field
 
-  def bind(s:S1) = s1 = s
+  def bind(s:S1, props:Map[String,Object]) = s1 = s
   def unbind(s:S1) = println("s1 is gone!")
 
   def go = println("Comp2 started")
