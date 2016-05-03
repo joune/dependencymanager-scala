@@ -1,12 +1,14 @@
 package org.apache.felix.dm.scala.test
 
-import org.apache.felix.dm.scala.DependencyActivatorBase
+import org.apache.felix.dm.scala.{DependencyActivatorBase, ServiceDependencyBuilder}
 
 import org.scalatest.tools.Runner
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
+
+import ServiceDependencyBuilder.Props //just an alias for Map[String,Object]
 
 class Activator extends DependencyActivatorBase
 {
@@ -21,7 +23,7 @@ class Activator extends DependencyActivatorBase
       _.provides(classOf[S2])
        .requires(classOf[S1]) {
          _.filter("name", "comp1")
-          .added((inst,s,p) => inst.bind(s,p))
+          .added(i => i.bind _)
        }
        .optionally(classOf[S1])(_.filter("name", "whatever"))
        .start(_.go)
@@ -30,18 +32,18 @@ class Activator extends DependencyActivatorBase
     // inject services to ourself so we can start the actual test
     component(this) {
       _.requires(classOf[S1]) {
-         _.added((inst,s,p) => inst.bind(s))
+         _.added(i => i.bind _)
        }
        .requires(classOf[S2]) {
-         _.added((inst,s,p) => inst.bind(s))
+         _.added(i => i.bind _)
        }
        .init(_.test_init)
        .start(_.start)
     }
   }
 
-  def bind(s:S1) = TestDependencies.s1 = true
-  def bind(s:S2) = TestDependencies.s2 = true
+  def bind(s:S1,p:Props) = TestDependencies.s1 = true
+  def bind(s:S2,p:Props) = TestDependencies.s2 = true
   def test_init = TestDependencies.init = true
   def test_stop = TestDependencies.stop = true
   def test_destroy = TestDependencies.destroy = true
@@ -69,7 +71,7 @@ class Comp2 extends S2
   private var s1:S1 = _ // injected by callback
   //private var o1:Option[S1] = None // injected by field
 
-  def bind(s:S1, props:Map[String,Object]) = s1 = s
+  def bind(s:S1, props:Props) = s1 = s
   def unbind(s:S1) = println("s1 is gone!")
 
   def go = println("Comp2 started")
