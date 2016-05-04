@@ -1,7 +1,7 @@
 package org.apache.felix.dm.scala
 
-import org.apache.felix.dm.Dependency
-import org.apache.felix.dm.DependencyManager
+import org.apache.felix.dm.{DependencyManager, Dependency, Component}
+import org.osgi.framework.ServiceReference
 import ServiceDependencyBuilder.Props
 
 trait ServiceDependencyBuilder[S,C]
@@ -24,10 +24,7 @@ object ServiceDependencyBuilder
   import java.util.{Map => jMap}
 
   type Props = Map[String,Object]
-  type jProps = jMap[String,Object]
   type Callback[C,S] = C => (S,Props) => Unit
-
-  implicit def toProps(p:jProps) :Props = scala.collection.JavaConversions.mapAsScalaMap(p).toMap
 
   def apply[S,C](required:Boolean, s:Class[S]) :ServiceDependencyBuilder[S,C] = {
     ServiceDependencyBuilderImpl(required, s)
@@ -43,14 +40,12 @@ object ServiceDependencyBuilder
     }
     d.setCallbacks(new Object {
       lazy val comp = inst()
-      //FIXME callback not found !? def _added  (s:S, p:jProps):Unit = b.o_added   foreach (_(comp)(s, p))
-      //FIXME callback not found !? def _changed(s:S, p:jProps):Unit = b.o_changed foreach (_(comp)(s, p))
-      //FIXME callback not found !? def _removed(s:S, p:jProps):Unit = b.o_removed foreach (_(comp)(s, p))
-      //FIXME callback not found !? def _swapped(s:S, p:jProps):Unit = b.o_swapped foreach (_(comp)(s, p))
-      def _added  (s:S):Unit = b.o_added   foreach (_(comp)(s, Map[String,Object]()))//FIXME temp workaround, no props
-      def _changed(s:S):Unit = b.o_changed foreach (_(comp)(s, Map[String,Object]()))//FIXME temp workaround, no props
-      def _removed(s:S):Unit = b.o_removed foreach (_(comp)(s, Map[String,Object]()))//FIXME temp workaround, no props
-      def _swapped(s:S):Unit = b.o_swapped foreach (_(comp)(s, Map[String,Object]()))//FIXME temp workaround, no props
+      import scala.collection.JavaConversions._
+      implicit def refToProps(r:ServiceReference[S]) = r.getPropertyKeys.map(k => (k,r.getProperty(k))).toMap
+      def _added  (c:Component, r:ServiceReference[S], s:Object):Unit = b.o_added   foreach (_(comp)(s.asInstanceOf[S], r))
+      def _changed(c:Component, r:ServiceReference[S], s:Object):Unit = b.o_changed foreach (_(comp)(s.asInstanceOf[S], r))
+      def _removed(c:Component, r:ServiceReference[S], s:Object):Unit = b.o_removed foreach (_(comp)(s.asInstanceOf[S], r))
+      def _swapped(c:Component, r:ServiceReference[S], s:Object):Unit = b.o_swapped foreach (_(comp)(s.asInstanceOf[S], r))
     }, "_added", "_changed", "_removed", "_swapped")
     d
   }
