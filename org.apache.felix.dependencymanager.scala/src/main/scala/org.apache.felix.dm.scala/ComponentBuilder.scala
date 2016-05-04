@@ -13,7 +13,7 @@ trait ComponentBuilder[T]
   def stop(f :T => Unit) :ComponentBuilder[T]
   def destroy(f :T => Unit) :ComponentBuilder[T]
 
-  def requires[D](d :Class[D])(configure :ServiceDependencyBuilder[D,T] => ServiceDependencyBuilder[D,T]) :ComponentBuilder[T]
+  def requires[D](d :Class[D])(implicit configure :ServiceDependencyBuilder[D,T] => ServiceDependencyBuilder[D,T]) :ComponentBuilder[T]
   def optionally[D](d :Class[D])(configure :ServiceDependencyBuilder[D,T] => ServiceDependencyBuilder[D,T]) :ComponentBuilder[T]
 }
 
@@ -81,7 +81,8 @@ object ComponentBuilder
     def stop(f :T => Unit) :ComponentBuilder[T] = copy(stop = Some(f))
     def destroy(f :T => Unit) :ComponentBuilder[T] = copy(destroy = Some(f))
 
-    def requires[D](d :Class[D])(configure :DepsConfig[D,T]) :ComponentBuilder[T] = 
+
+    def requires[D](d :Class[D])(implicit configure :DepsConfig[D,T]) :ComponentBuilder[T] = 
       addDependency(true, d, configure)
     def optionally[D](d :Class[D])(configure :DepsConfig[D,T]) :ComponentBuilder[T] = 
       addDependency(false, d, configure)

@@ -13,6 +13,9 @@ trait ServiceDependencyBuilder[S,C]
   def orFilter(fs:(String,String)*):ServiceDependencyBuilder[S,C]
   def andFilter(fs:(String,String)*):ServiceDependencyBuilder[S,C]
 
+  def inject:ServiceDependencyBuilder[S,C]
+  def inject(field:String):ServiceDependencyBuilder[S,C]
+
   def added  (cb:Callback[C,S]):ServiceDependencyBuilder[S,C]
   def changed(cb:Callback[C,S]):ServiceDependencyBuilder[S,C]
   def removed(cb:Callback[C,S]):ServiceDependencyBuilder[S,C]
@@ -21,8 +24,6 @@ trait ServiceDependencyBuilder[S,C]
 
 object ServiceDependencyBuilder
 {
-  import java.util.{Map => jMap}
-
   type Props = Map[String,Object]
   type Callback[C,S] = C => (S,Props) => Unit
 
@@ -37,6 +38,11 @@ object ServiceDependencyBuilder
     b.o_filter match {
       case Some(f) => d.setService(b.service, f)
       case None    => d.setService(b.service)
+    }
+    b.o_inject match {
+      case Some("_") => d.setAutoConfig(true)
+      case Some(field) => d.setAutoConfig(field)
+      case None => //do nothing
     }
     d.setCallbacks(new Object {
       lazy val comp = inst()
@@ -54,6 +60,7 @@ object ServiceDependencyBuilder
     required:Boolean, 
     service:Class[S],
     o_filter:Option[String] = None,
+    o_inject :Option[String] = None,
     o_added  :Option[Callback[C,S]] = None,
     o_changed:Option[Callback[C,S]] = None,
     o_removed:Option[Callback[C,S]] = None,
@@ -66,6 +73,9 @@ object ServiceDependencyBuilder
     def orFilter(fs:(String,String)*):ServiceDependencyBuilder[S,C] = copy(o_filter = Some(s"(|${concat(fs.toList)})"))
     def andFilter(fs:(String,String)*):ServiceDependencyBuilder[S,C] = copy(o_filter = Some(s"(&${concat(fs.toList)})"))
     private def concat(fs:List[(String,String)]) = fs.map { case (k,v) => s"($k=$v)" }.mkString
+
+    def inject = inject("_")//marker value :/
+    def inject(field:String) = copy(o_inject = Some(field))
 
     def added  (cb:Callback[C,S]):ServiceDependencyBuilder[S,C] = copy(o_added   = Some(cb))
     def changed(cb:Callback[C,S]):ServiceDependencyBuilder[S,C] = copy(o_changed = Some(cb))

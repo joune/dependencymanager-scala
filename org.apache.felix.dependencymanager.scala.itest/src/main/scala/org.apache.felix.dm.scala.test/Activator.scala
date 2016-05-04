@@ -1,6 +1,7 @@
 package org.apache.felix.dm.scala.test
 
 import org.apache.felix.dm.scala.{DependencyActivatorBase, ServiceDependencyBuilder}
+//FIXME import org.apache.felix.dm.scala.Implicits.autoInjectService
 
 import org.scalatest.tools.Runner
 import scala.concurrent.Future
@@ -9,6 +10,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
 
 import ServiceDependencyBuilder.Props //just an alias for Map[String,Object]
+
 
 class Activator extends DependencyActivatorBase
 {
@@ -35,21 +37,23 @@ class Activator extends DependencyActivatorBase
          _.added(i => i.bind _)
        }
        .requires(classOf[S2]) {
-         _.added(i => i.bind _)
+         _.inject //FIXME: plug default behaviour = auto-inject
        }
        .init(_.test_init)
        .start(_.start)
     }
   }
 
-  def bind(s:S1,p:Props) = TestDependencies.s1 = true
-  def bind(s:S2,p:Props) = TestDependencies.s2 = true
-  def test_init = TestDependencies.init = true
-  def test_stop = TestDependencies.stop = true
-  def test_destroy = TestDependencies.destroy = true
+  var s2:S2 = _ //injected
+  def bind(s:S1,p:Props) = Tests.s1 = s != null && p("name") == "comp1"
+  def test_init = Tests.init = true
+  def test_stop = Tests.stop = true
+  def test_destroy = Tests.destroy = true
 
   def start:Unit = Future {
-    TestDependencies.start = true //obviously :/
+    Tests.start = true //obviously :/
+    Tests.s2 = s2 != null //check that s2 was injected
+
     assert( Runner.run(Array("-o",
       "-u", System.getProperty("test.out"),
       "-s", classOf[DMSpec].getName)) )
@@ -78,7 +82,7 @@ class Comp2 extends S2
 
 }
 
-object TestDependencies
+object Tests
 {
   var s1:Boolean = false
   var s2:Boolean = false
@@ -93,10 +97,13 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class DMSpec extends FlatSpec with Matchers
 {
-  import TestDependencies._
+  import Tests._
 
-  "DM" should "bind all dependencies" in {
+  "DM" should "bind callback dependencies" in {
     assert(s1, "S1 not bound")
+  }
+
+  it should "bind injected dependencies" in {
     assert(s2, "S2 not bound")
   }
   
@@ -106,7 +113,7 @@ class DMSpec extends FlatSpec with Matchers
   }
 
   ignore should "call the stop and destroy lifecycle callback methods" in {
-    assert(stop, "start not called")
-    assert(destroy, "start not called")
+    assert(stop, "stop not called")
+    assert(destroy, "destroy not called")
   }
 }

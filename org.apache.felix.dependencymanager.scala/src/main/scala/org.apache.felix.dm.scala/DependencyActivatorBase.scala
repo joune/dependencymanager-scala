@@ -30,3 +30,9 @@ abstract class DependencyActivatorBase extends BundleActivator
   def component[T](f: () => T)(configure :ComponentBuilder[T] => ComponentBuilder[T]) =
     dm.add(ComponentBuilder(dm, f, configure))
 }
+
+object Implicits
+{
+  implicit def autoInjectService[S,C] = (b:ServiceDependencyBuilder[S,C]) => b.inject
+}
+
