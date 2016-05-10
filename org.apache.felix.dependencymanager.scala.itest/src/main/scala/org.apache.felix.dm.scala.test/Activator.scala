@@ -1,7 +1,11 @@
 package org.apache.felix.dm.scala.test
 
+// 'hack'?.. we must hide Predef.$conforms in order to enable autoInjectService
+// see http://stackoverflow.com/questions/5377492/problem-with-implicit-ambiguity-between-my-method-and-conforms-in-predef#5379062
+import Predef.{$conforms => _, _}
+import org.apache.felix.dm.scala.Implicits.autoInjectService
+
 import org.apache.felix.dm.scala.{DependencyActivatorBase, ServiceDependencyBuilder}
-//FIXME import org.apache.felix.dm.scala.Implicits.autoInjectService
 
 import org.scalatest.tools.Runner
 import scala.concurrent.Future
@@ -36,9 +40,7 @@ class Activator extends DependencyActivatorBase
       _.requires(classOf[S1]) {
          _.added(i => i.bind _)
        }
-       .requires(classOf[S2]) {
-         _.inject //FIXME: plug default behaviour = auto-inject
-       }
+       .requires(classOf[S2]) // plugged default behaviour = autoInjectService
        .init(_.test_init)
        .start(_.start)
     }
