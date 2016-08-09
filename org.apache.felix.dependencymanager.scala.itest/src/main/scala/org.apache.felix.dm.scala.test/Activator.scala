@@ -1,12 +1,20 @@
 package org.apache.felix.dm.scala.test
 
-import org.apache.felix.dm.scala.DependencyActivatorBase
+// 'hack'?.. we must hide Predef.$conforms in order to enable autoInjectService
+// see http://stackoverflow.com/questions/5377492/problem-with-implicit-ambiguity-between-my-method-and-conforms-in-predef#5379062
+import Predef.{$conforms => _, _}
+import org.apache.felix.dm.scala.Implicits.autoInjectService
+
+import org.apache.felix.dm.scala.{DependencyActivatorBase, ServiceDependencyBuilder}
 
 import org.scalatest.tools.Runner
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
+
+import ServiceDependencyBuilder.Props //just an alias for Map[String,Object]
+
 
 class Activator extends DependencyActivatorBase
 {
@@ -21,33 +29,34 @@ class Activator extends DependencyActivatorBase
       .provides[S2]()
       .requires[S1] {
         _.filter("name", "comp1")
-         .added((inst,s) => inst.bind(s))
+         .added(i => i.bind _)
       }
       .optionally[S1](_.filter("name", "whatever"))
       .start(_.go)
       .register
 
+
     // inject services to ourself so we can start the actual test
     component(this)
       .requires[S1] {
-        _.added((inst,s) => inst.bind(s))
+        _.added(i => i.bind _)
       }
-      .requires[S2] {
-        _.added((inst,s) => inst.bind(s))
-      }
+      .requires[S2] // plugged default behaviour = autoInjectService
       .init(_.test_init)
       .start(_.start)
       .register
   }
 
-  def bind(s:S1) = TestDependencies.s1 = true
-  def bind(s:S2) = TestDependencies.s2 = true
-  def test_init = TestDependencies.init = true
-  def test_stop = TestDependencies.stop = true
-  def test_destroy = TestDependencies.destroy = true
+  var s2:S2 = _ //injected
+  def bind(s:S1,p:Props) = Tests.s1 = s != null && p("name") == "comp1"
+  def test_init = Tests.init = true
+  def test_stop = Tests.stop = true
+  def test_destroy = Tests.destroy = true
 
   def start:Unit = Future {
-    TestDependencies.start = true //obviously :/
+    Tests.start = true //obviously :/
+    Tests.s2 = s2 != null //check that s2 was injected
+
     assert( Runner.run(Array("-o",
       "-u", System.getProperty("test.out"),
       "-s", classOf[DMSpec].getName)) )
@@ -69,14 +78,14 @@ class Comp2 extends S2
   private var s1:S1 = _ // injected by callback
   //private var o1:Option[S1] = None // injected by field
 
-  def bind(s:S1) = s1 = s
+  def bind(s:S1, props:Props) = s1 = s
   def unbind(s:S1) = println("s1 is gone!")
 
   def go = println("Comp2 started")
 
 }
 
-object TestDependencies
+object Tests
 {
   var s1:Boolean = false
   var s2:Boolean = false
@@ -91,10 +100,13 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class DMSpec extends FlatSpec with Matchers
 {
-  import TestDependencies._
+  import Tests._
 
-  "DM" should "bind all dependencies" in {
+  "DM" should "bind callback dependencies" in {
     assert(s1, "S1 not bound")
+  }
+
+  it should "bind injected dependencies" in {
     assert(s2, "S2 not bound")
   }
   
@@ -104,7 +116,7 @@ class DMSpec extends FlatSpec with Matchers
   }
 
   ignore should "call the stop and destroy lifecycle callback methods" in {
-    assert(stop, "start not called")
-    assert(destroy, "start not called")
+    assert(stop, "stop not called")
+    assert(destroy, "destroy not called")
   }
 }

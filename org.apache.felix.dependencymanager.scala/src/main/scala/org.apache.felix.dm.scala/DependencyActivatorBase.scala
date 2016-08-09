@@ -34,3 +34,9 @@ object Helpers
 {
   def getClassOf[T : TypeTag] = typeTag[T].mirror.runtimeClass(typeOf[T].typeSymbol.asClass).asInstanceOf[Class[T]]
 }
+
+object Implicits
+{
+  implicit def autoInjectService[S,C] = (b:ServiceDependencyBuilder[S,C]) => b.inject
+}
+

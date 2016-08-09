@@ -15,7 +15,7 @@ trait ComponentBuilder[C]
   def stop(f: C => Unit): ComponentBuilder[C]
   def destroy(f: C => Unit): ComponentBuilder[C]
 
-  def requires[D](configure: ServiceDependencyBuilder[D,C] => ServiceDependencyBuilder[D,C])(implicit tt:TypeTag[D]): ComponentBuilder[C]
+  def requires[D](implicit configure: ServiceDependencyBuilder[D,C] => ServiceDependencyBuilder[D,C], tt:TypeTag[D]): ComponentBuilder[C]
   def optionally[D](configure: ServiceDependencyBuilder[D,C] => ServiceDependencyBuilder[D,C])(implicit tt:TypeTag[D]): ComponentBuilder[C]
 
   def register(implicit dm:DependencyManager): Component
@@ -67,7 +67,7 @@ object ComponentBuilder
       this
     }
 
-    def requires[D](configure: DepsConfig[D,C])(implicit tt:TypeTag[D]): ComponentBuilder[C] = 
+    def requires[D](implicit configure: DepsConfig[D,C], tt:TypeTag[D]): ComponentBuilder[C] = 
       addDependency(true, configure)
     def optionally[D](configure: DepsConfig[D,C])(implicit tt:TypeTag[D]): ComponentBuilder[C] = 
       addDependency(false, configure)
