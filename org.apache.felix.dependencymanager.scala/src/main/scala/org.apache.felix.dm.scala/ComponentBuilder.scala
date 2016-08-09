@@ -15,10 +15,19 @@ trait ComponentBuilder[C]
   def stop(f: C => Unit): ComponentBuilder[C]
   def destroy(f: C => Unit): ComponentBuilder[C]
 
-  def requires[D](implicit configure: ServiceDependencyBuilder[D,C] => ServiceDependencyBuilder[D,C], tt:TypeTag[D]): ComponentBuilder[C]
-  def optionally[D](configure: ServiceDependencyBuilder[D,C] => ServiceDependencyBuilder[D,C])(implicit tt:TypeTag[D]): ComponentBuilder[C]
+  def addDependency[D](required:Boolean, configure: ServiceDependencyBuilder[D,C] => ServiceDependencyBuilder[D,C], tt: TypeTag[D]): ComponentBuilder[C]
+
+  def requires[D: TypeTag] = new ServiceDependencyConfig(this, true, typeTag[D])
+  def optionally[D: TypeTag] = new ServiceDependencyConfig(this, false, typeTag[D])
 
   def register(implicit dm:DependencyManager): Component
+}
+
+// this class serves as a method indirection to "curry" the TypeTag and 'configure' implicit parameters, to enable default configurations
+// FIXME: I'm not too happy with the "withConf" wording of the API, especially when using the implicit default value :/
+class ServiceDependencyConfig[C,D](comp: ComponentBuilder[C], required: Boolean, tt:TypeTag[D]) {
+  def withConf(implicit configure: ServiceDependencyBuilder[D,C] => ServiceDependencyBuilder[D,C]): ComponentBuilder[C] =
+    comp.addDependency[D](required, configure, tt)
 }
 
 object ComponentBuilder
@@ -67,13 +76,8 @@ object ComponentBuilder
       this
     }
 
-    def requires[D](implicit configure: DepsConfig[D,C], tt:TypeTag[D]): ComponentBuilder[C] = 
-      addDependency(true, configure)
-    def optionally[D](configure: DepsConfig[D,C])(implicit tt:TypeTag[D]): ComponentBuilder[C] = 
-      addDependency(false, configure)
-
-    def addDependency[D](required:Boolean, configure: DepsConfig[D,C])(implicit tt:TypeTag[D]): ComponentBuilder[C] = {
-      dependencies = configure(ServiceDependencyBuilder(required, Helpers.getClassOf[D]))::dependencies
+    def addDependency[D](required:Boolean, configure: ServiceDependencyBuilder[D,C] => ServiceDependencyBuilder[D,C], tt: TypeTag[D]): ComponentBuilder[C] = {
+      dependencies = configure(ServiceDependencyBuilder(required, Helpers.getClassOf[D](tt)))::dependencies
       this
     }
 

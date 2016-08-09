@@ -15,7 +15,6 @@ import scala.util.{Success, Failure}
 
 import ServiceDependencyBuilder.Props //just an alias for Map[String,Object]
 
-
 class Activator extends DependencyActivatorBase
 {
   def init() = {
@@ -27,21 +26,21 @@ class Activator extends DependencyActivatorBase
 
     component[Comp2]
       .provides[S2]()
-      .requires[S1] {
+      .requires[S1].withConf {
         _.filter("name", "comp1")
          .added(i => i.bind _)
       }
-      .optionally[S1](_.filter("name", "whatever"))
+      .optionally[S1].withConf(_.filter("name", "whatever"))
       .start(_.go)
       .register
 
 
     // inject services to ourself so we can start the actual test
     component(this)
-      .requires[S1] {
+      .requires[S1].withConf {
         _.added(i => i.bind _)
       }
-      .requires[S2] // plugged default behaviour = autoInjectService
+      .requires[S2].withConf // plugged default behaviour = autoInjectService
       .init(_.test_init)
       .start(_.start)
       .register
