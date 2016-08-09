@@ -12,32 +12,29 @@ class Activator extends DependencyActivatorBase
 {
   def init() = {
     // initialize some random components
-    component(new Comp1()) {
-      _.provides[S1]("name" -> "comp1")
-       .start(_.run)
-    }
+    component(new Comp1())
+      .provides[S1]("name" -> "comp1")
+      .start(_.run)
 
-    component[Comp2] {
-      _.provides[S2]()
-       .requires[S1] {
-         _.filter("name", "comp1")
-          .added((inst,s) => inst.bind(s))
-       }
-       .optionally[S1](_.filter("name", "whatever"))
-       .start(_.go)
-    }
+    component[Comp2]
+      .provides[S2]()
+      .requires[S1] {
+        _.filter("name", "comp1")
+         .added((inst,s) => inst.bind(s))
+      }
+      .optionally[S1](_.filter("name", "whatever"))
+      .start(_.go)
 
     // inject services to ourself so we can start the actual test
-    component(this) {
-      _.requires[S1] {
-         _.added((inst,s) => inst.bind(s))
-       }
-       .requires[S2] {
-         _.added((inst,s) => inst.bind(s))
-       }
-       .init(_.test_init)
-       .start(_.start)
-    }
+    component(this)
+      .requires[S1] {
+        _.added((inst,s) => inst.bind(s))
+      }
+      .requires[S2] {
+        _.added((inst,s) => inst.bind(s))
+      }
+      .init(_.test_init)
+      .start(_.start)
   }
 
   def bind(s:S1) = TestDependencies.s1 = true

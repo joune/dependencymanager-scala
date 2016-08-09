@@ -23,14 +23,9 @@ abstract class DependencyActivatorBase extends BundleActivator
   def init():Unit
   def destroy() = Unit
 
-  def component[T](c: T)(configure :ComponentBuilder => ComponentBuilder) =
-    dm.add(ComponentBuilder(dm, c, configure))
-
-  def component[T :TypeTag](configure :ComponentBuilder => ComponentBuilder) =
-    dm.add(ComponentBuilder(dm, Helpers.getClassOf[T], configure))
-
-  def component[T](f: () => T)(configure :ComponentBuilder => ComponentBuilder) =
-    dm.add(ComponentBuilder(dm, f, configure))
+  def component[T](c: T) = ComponentBuilder(c)
+  def component[T :TypeTag] = ComponentBuilder(Helpers.getClassOf[T])
+  def component[T](f: () => T) = ComponentBuilder(f)
 }
 
 object Helpers
