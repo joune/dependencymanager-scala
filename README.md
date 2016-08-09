@@ -19,6 +19,6 @@ View tests.
 
 * The API is driven by types, not class instances
 
-# Pluggable default service configuration
+## Pluggable default service configuration
 
 For instance dependencies may be injected unless specified otherwise.
