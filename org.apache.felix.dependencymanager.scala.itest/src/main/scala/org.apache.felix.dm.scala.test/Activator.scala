@@ -13,26 +13,26 @@ class Activator extends DependencyActivatorBase
   def init() = {
     // initialize some random components
     component(new Comp1()) {
-      _.provides(classOf[S1], "name" -> "comp1")
+      _.provides[S1]("name" -> "comp1")
        .start(_.run)
     }
 
     component[Comp2] {
-      _.provides(classOf[S2])
-       .requires(classOf[S1]) {
+      _.provides[S2]()
+       .requires[S1] {
          _.filter("name", "comp1")
           .added((inst,s) => inst.bind(s))
        }
-       .optionally(classOf[S1])(_.filter("name", "whatever"))
+       .optionally[S1](_.filter("name", "whatever"))
        .start(_.go)
     }
 
     // inject services to ourself so we can start the actual test
     component(this) {
-      _.requires(classOf[S1]) {
+      _.requires[S1] {
          _.added((inst,s) => inst.bind(s))
        }
-       .requires(classOf[S2]) {
+       .requires[S2] {
          _.added((inst,s) => inst.bind(s))
        }
        .init(_.test_init)
