@@ -13,6 +13,8 @@ abstract class DependencyActivatorBase extends BundleActivator
 {
   protected var dm:DependencyManager = _
 
+  implicit def dependencymanager = dm
+
   def start(bc :BundleContext) :Unit = {
     dm = new DependencyManager(bc)
     init()
@@ -24,7 +26,7 @@ abstract class DependencyActivatorBase extends BundleActivator
   def destroy() = Unit
 
   def component[T](c: T) = ComponentBuilder(c)
-  def component[T :TypeTag] = ComponentBuilder(Helpers.getClassOf[T])
+  def component[T :TypeTag] = ComponentBuilder[T]
   def component[T](f: () => T) = ComponentBuilder(f)
 }
 

@@ -15,6 +15,7 @@ class Activator extends DependencyActivatorBase
     component(new Comp1())
       .provides[S1]("name" -> "comp1")
       .start(_.run)
+      .register
 
     component[Comp2]
       .provides[S2]()
@@ -24,6 +25,7 @@ class Activator extends DependencyActivatorBase
       }
       .optionally[S1](_.filter("name", "whatever"))
       .start(_.go)
+      .register
 
     // inject services to ourself so we can start the actual test
     component(this)
@@ -35,6 +37,7 @@ class Activator extends DependencyActivatorBase
       }
       .init(_.test_init)
       .start(_.start)
+      .register
   }
 
   def bind(s:S1) = TestDependencies.s1 = true
